@@ -54,6 +54,7 @@ const Home = () => {
       const data = await response.json();
       console.log('GitHub User:', data);
       setUserData(data);
+      localStorage.setItem("username", data.login);
       setLoading(false);
     }
 
