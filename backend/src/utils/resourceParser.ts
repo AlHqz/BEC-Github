@@ -6,6 +6,7 @@ import * as PRManagement from '../prManagement';
 import * as resourceInterfaces from "./resourceInterfaces";
 import remotePath from "./remotePaths";
 import { format } from "date-fns";
+import remotePath from "./remotePaths";
 
 //Identifica el tipo de recurso
 export default function resourceIdentifier(data: any, image: any, imageSet?: any[]) {
