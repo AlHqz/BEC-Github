@@ -4,6 +4,7 @@ import * as dirManager from "./dirManager";
 import * as resourceInterfaces from "./resourceInterfaces";
 import imageManager from "./imageManager";
 import { format } from "date-fns";
+import remotePath from "./remotePaths";
 
 //Identifica el tipo de recurso
 export default function resourceIdentifier(data: any, image: any) {
@@ -60,6 +61,9 @@ async function parseEvents(data: resourceInterfaces.EventData, image: any): Prom
         console.log(`Archivo YAML creado exitosamente en: ${parentPath}/event.yml`);
 
         imageManager(image, childPath, "thumbnail");
+
+        const remote = await remotePath(data);
+        console.log("Remote Path for the processed resource category: " + remote);
     } catch (error) {
         console.error("Error processing data: ", error);
     }
@@ -95,6 +99,9 @@ async function parseNewsletter(data: resourceInterfaces.NewsletterData, image: a
         console.log(`Archivo YAML creado exitosamente en: ${parentPath}/newsletter.yml`);
 
         imageManager(image, childPath, "thumbnail");
+
+        const remote = await remotePath(data);
+        console.log("Remote Path for the processed resource category: " + remote);
     }catch(error){
         console.error("Error processing data: ", error);
     }
@@ -133,6 +140,9 @@ async function parseProfessor(data: resourceInterfaces.ProfessorData, image: any
         console.log(`Archivo YAML creado exitosamente en: ${parentPath}/en.yml`);
 
         imageManager(image, childPath, "profile");
+
+        const remote = await remotePath(data);
+        console.log("Remote Path for the processed resource category: " + remote);
     }catch(error){
         console.error("Error processing data: ", error);
     }
@@ -165,6 +175,9 @@ async function parseProjects(data: resourceInterfaces.ProjectData, image: any): 
         console.log(`Archivo YAML creado exitosamente en: ${parentPath}/${data.original_language}.yml`);
     
         imageManager(image, childPath, "logo");
+
+        const remote = await remotePath(data);
+        console.log("Remote Path for the processed resource category: " + remote);
     } catch(error){
         console.error(error);
         console.log(data);
