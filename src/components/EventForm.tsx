@@ -3,9 +3,16 @@ import { v4 as uuidv4 } from "uuid";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import moment from "moment-timezone";
+import { useNavigate } from "react-router-dom";
+const apiKey = import.meta.env.VITE_TIMEZONEDB_KEY;
+import axios from "axios";
+import { supportedLanguages } from "../constants/languages";
+
 
 const EventForm = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
+    category: "Events",
     id: uuidv4(),
     start_date: new Date(),
     end_date: new Date(),
@@ -18,6 +25,7 @@ const EventForm = () => {
     language2: "",
     website: "",
     tags: ["", "", ""],
+    thumbnail: null as File | null,
   });
 
   const eventTypes = ["conference", "exam", "meetup", "lecture", "workshop"];
@@ -34,22 +42,81 @@ const EventForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Obtener timezone solo al enviar
-    let timezone = moment.tz.guess();
-    const country = formData.address_city_country.split(", ")[1];
-
+  
+    // Obtener el usuario autenticado desde el backend
+    let githubUser = null;
     try {
-      const response = await fetch(`https://worldtimeapi.org/api/timezone`);
-      const timezones = await response.json();
-      timezone = timezones.find((tz: string) => tz.includes(country)) || timezone;
+      const userResponse = await fetch("http://localhost:4000/api/user", {
+        credentials: "include",
+      });
+      const userData = await userResponse.json();
+      githubUser = userData.user ? userData.user.username : "Unknown";
     } catch (error) {
-      console.error("Could not fetch timezone:", error);
+      console.error("Error fetching GitHub user:", error);
     }
+  
+    // Obtener timezone usando Nominatim + TimeZoneDB
+    let timezone = moment.tz.guess(); // fallback si falla todo
+    const locationQuery = encodeURIComponent(formData.address_city_country);
+    
+    try {
+      const nominatimRes = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${locationQuery}&format=json&limit=1`,
+        {
+          headers: {
+            "User-Agent": "BEC-Github-Client/1.0 (contact@bec.org)",
+          },
+        }
+      );
+      const nominatimData = await nominatimRes.json();
+    
+      if (nominatimData.length > 0) {
+        const lat = nominatimData[0].lat;
+        const lon = nominatimData[0].lon;
+    
+        const timezoneRes = await fetch(
+          `https://api.timezonedb.com/v2.1/get-time-zone?key=${apiKey}&format=json&by=position&lat=${lat}&lng=${lon}`
+        );
+        const timezoneData = await timezoneRes.json();
+    
+        if (timezoneData.status === "OK") {
+          timezone = timezoneData.zoneName;
+        } else {
+          console.warn("TimeZoneDB error:", timezoneData.message);
+        }
+      } else {
+        console.warn("No location found in OpenStreetMap");
+      }
+    } catch (error) {
+      console.error("Error fetching timezone from OSM/TimeZoneDB:", error);
+    }
+    
 
-    const finalData = { ...formData, timezone };
+
+  
+    // Crear el objeto final incluyendo el usuario autenticado de GitHub
+    const finalData = { ...formData, timezone, submitted_by: githubUser };
     console.log(finalData);
+
+    //Enviar finalData al server
+    try{
+      await axios.post("http://localhost:4000/", finalData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+      .then(response => {
+        if(response.status === 200) {
+          console.log("Server response: ", response.data)
+          navigate("/");
+        }
+      })
+      .catch(error => console.error('Error:', error));
+    }catch(error){
+      console.error("Error sending data: ", error)
+    }
   };
+  
 
   return (
     <form className="w-full max-w-4xl flex flex-col gap-4" onSubmit={handleSubmit}>
@@ -62,27 +129,51 @@ const EventForm = () => {
     onChange={handleChange}
   />
 
-  <div className="flex gap-4">
-    <DatePicker
-      selected={formData.start_date}
-      onChange={(date: Date | null) => {
-        if (date) setFormData({ ...formData, start_date: date });
-      }}
-      showTimeSelect
-      dateFormat="yyyy-MM-dd HH:mm:ss"
-      className="p-3 rounded bg-gray-800 text-white w-full"
-    />
+      <div className="flex gap-4">
+        <div className="w-1/3">
+          <DatePicker
+            selected={formData.start_date}
+            onChange={(date: Date | null) => {
+              if (date) setFormData({ ...formData, start_date: date });
+            }}
+            showTimeSelect
+            dateFormat="yyyy-MM-dd HH:mm:ss"
+            className="p-3 rounded bg-gray-800 text-white w-full"
+          />
+        </div>
 
-    <DatePicker
-      selected={formData.end_date}
-      onChange={(date: Date | null) => {
-        if (date) setFormData({ ...formData, end_date: date });
-      }}
-      showTimeSelect
-      dateFormat="yyyy-MM-dd HH:mm:ss"
-      className="p-3 rounded bg-gray-800 text-white w-full"
-    />
-  </div>
+        <div className="w-1/3">
+          <DatePicker
+            selected={formData.end_date}
+            onChange={(date: Date | null) => {
+              if (date) setFormData({ ...formData, end_date: date });
+            }}
+            showTimeSelect
+            dateFormat="yyyy-MM-dd HH:mm:ss"
+            className="p-3 rounded bg-gray-800 text-white w-full"
+          />
+        </div>
+
+        <div className="w-1/3 flex items-end">
+          <label
+            title="Upload only horizontal images"
+            className="cursor-pointer bg-gray-800 hover:bg-orange-700 text-white text-sm px-5 py-3 rounded-md transition shadow-md w-full text-center"
+          >
+            Upload Thumbnail
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {  
+                    formData.thumbnail = file;
+                }
+              }}
+            />
+          </label>
+        </div>
+      </div>
 
   <div className="flex gap-4">
     <input
@@ -124,21 +215,34 @@ const EventForm = () => {
     onChange={handleChange}
   />
 
-  <input
-    type="text"
-    placeholder="Primary Language (e.g., en)"
-    className="p-3 rounded bg-gray-800 text-white w-40"
-    value={formData.language1}
-    onChange={(e) => setFormData({ ...formData, language1: e.target.value })}
-  />
+<select
+  name="language1"
+  value={formData.language1}
+  onChange={handleChange}
+  className="p-3 rounded bg-gray-800 text-white w-full"
+>
+  <option value="">Select Language</option>
+  {supportedLanguages.map((lang) => (
+    <option key={lang} value={lang}>
+      {lang}
+    </option>
+  ))}
+</select>
 
-  <input
-    type="text"
-    placeholder="Secondary Lang"
-    className="p-3 rounded bg-gray-800 text-white w-40"
-    value={formData.language2}
-    onChange={(e) => setFormData({ ...formData, language2: e.target.value })}
-  />
+<select
+  name="language2"
+  value={formData.language2}
+  onChange={handleChange}
+  className="p-3 rounded bg-gray-800 text-white w-full"
+>
+  <option value="">Optional: Second Language</option>
+  {supportedLanguages.map((lang) => (
+    <option key={lang} value={lang}>
+      {lang}
+    </option>
+  ))}
+</select>
+
 </div>
 
 
