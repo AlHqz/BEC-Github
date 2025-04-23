@@ -155,7 +155,7 @@ async function parseProjects(data: resourceInterfaces.ProjectData, image: any): 
         const projectData = {
             id: data.id,
             name: data.name,
-            links: links,
+            ...(links[0 || 1 || 2 || 3] && {links: { website: links[0], twitter: links[1], github: links[2], nostr: links[3] } }),
             category: data.category,
             original_language: data.original_language,
             tags: data.tags,
