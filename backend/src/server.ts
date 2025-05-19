@@ -49,21 +49,7 @@ app.post("/upload-tutorial", upload.fields([{name: 'thumbnail'}, {name: 'stepsIm
   }
 });
 
-app.post("/upload-tutorial", upload.fields([{name: 'thumbnail'}, {name: 'stepsImages'}]), async (req, res)=>{
-  try{
-    console.log("Data received: ", req.body);    
-    const files = req.files as { [key: string]: Express.Multer.File[] };
-    const thumbnail = files?.["thumbnail"]?.[0];
-    const stepsImages = files?.["stepsImages"] || []
-    await resourceParser(req.body, thumbnail, stepsImages);
-    res.status(200).send();
-  } catch(error){
-    console.error("Error receiving data: ", error);
-    res.status(500).send(res.json);
-  }
-});
-
-app.get("/", (_req, res) => {
+app.get("/", (__req, res) => {
   res.send("Backend funcionando 🚀");
 });
 
