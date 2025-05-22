@@ -2,12 +2,12 @@ import express from "express";
 import multer from "multer";
 import cors from "cors";
 import dotenv from "dotenv";
-import resourceParser from "./utils/resourceParser.ts";
-import githubAuth from './githubAuth.ts';
-import githubManage from './githubManage.ts';
-import branchManagement from './branchManagement.ts';
-import { fetchFileFromUserFork } from './githubUtils.ts';
-import { extractPathFromUrl } from './utils/pathUtils.ts';
+import resourceParser from "./utils/resourceParser";
+import githubAuth from './githubAuth';
+import githubManage from './githubManage';
+import branchManagement from './branchManagement';
+import { fetchFileFromUserFork } from './githubUtils';
+import { extractPathFromUrl } from './utils/pathUtils';
 
 dotenv.config();
 
