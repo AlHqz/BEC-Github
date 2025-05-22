@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 
+
 dotenv.config();
 
 const router: Router = express.Router();
@@ -213,7 +214,7 @@ router.post('/deletebranch', async (req: Request, res: Response): Promise<void> 
     const userLogin: string = userData.login;
 
 
-    const prUrl = `https://api.github.com/repos/${userLogin}/${REPO}/pulls?state=closed&head=${userLogin}:${branchName}`;
+    const prUrl = `https://api.github.com/repos/${UPSTREAM_OWNER}/${REPO}/pulls?state=closed&head=${userLogin}:${branchName}`;
     const prResp = await fetch(prUrl, {
       headers: {
         Authorization,
@@ -233,10 +234,10 @@ router.post('/deletebranch', async (req: Request, res: Response): Promise<void> 
     });
 
     
-    const prMergeado = pullRequests.find(pr => pr.merged_at !== null);
+    const prClosed = pullRequests.find(pr => pr.state === "closed");
 
-    if (!prMergeado) {
-      throw new Error("No se encontró un pull request mergeado para la rama especificada");
+    if (!prClosed) {
+      throw new Error("A closed pull request was not found for the specified branch.");
     }
 
     // const prMergeado = pullRequests.find(pr => pr.merged_at !== null);
@@ -264,6 +265,151 @@ router.post('/deletebranch', async (req: Request, res: Response): Promise<void> 
     } else {
       res.status(500).json({ error: "Error desconocido" });
     }
+  }
+});
+
+router.post('/updatepr', async (req: Request, res: Response): Promise<void> => {
+  const Authorization = req.get("Authorization");
+  const { branchName } = req.body;
+
+  if (!Authorization) {
+    res.status(401).json({ error: "Falta el header de Authorization" });
+    return;
+  }
+
+  if (!branchName) {
+    res.status(400).json({ error: "Falta el nombre de la rama en el body" });
+    return;
+  }
+
+  try {
+    // 1. Obtener información del usuario autenticado
+    const userResp = await fetch("https://api.github.com/user", {
+      headers: { Authorization: Authorization }
+    });
+
+    if (!userResp.ok) {
+      res.status(userResp.status).json({ error: "No se pudo obtener el usuario autenticado" });
+      return;
+    }
+
+    const userData = await userResp.json();
+    const userLogin = userData.login;
+
+    const query = `
+      query($owner: String!, $repo: String!, $branchName: String!) {
+        repository(owner: $owner, name: $repo) {
+          pullRequests(first: 10, states: OPEN, headRefName: $branchName) {
+            nodes {
+              id
+              number
+              title
+              isDraft
+              url
+              headRepository {
+                name
+                owner {
+                  login
+                }
+              }
+              author {
+                login
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const variables = { owner: UPSTREAM_OWNER, repo: REPO, branchName };
+
+    const graphqlResp = await fetch('https://api.github.com/graphql', {
+      method: "POST",
+      headers: {
+        Authorization: Authorization,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ query, variables })
+    });
+
+    if (!graphqlResp.ok) {
+      res.status(graphqlResp.status).json({
+        error: `Error al obtener los Pull Requests: ${graphqlResp.statusText}`
+      });
+      return;
+    }
+
+    const repoResponse = await graphqlResp.json();
+
+    const pullRequests = repoResponse.data?.repository?.pullRequests?.nodes ?? [];
+
+    if (pullRequests.length === 0) {
+      res.status(404).json({
+        message: `⚠️ No se encontró ningún Pull Request para la rama '${branchName}'.`
+      });
+      return;
+    }
+
+    const draftPR = (pullRequests as any[]).find(pr =>
+      pr.isDraft &&
+      pr.headRepository &&
+      pr.headRepository.owner.login === userLogin &&
+      pr.author.login === userLogin
+    );
+
+    if (!draftPR) {
+      res.status(404).json({
+        message: `⚠️ Se encontraron PRs para la rama '${branchName}', pero ninguno corresponde al fork y usuario '${userLogin}' en estado Draft.`
+      });
+      return;
+    }
+
+    // 3. Ejecutar mutación para marcar el PR como listo para revisión
+    const mutation = `
+      mutation($prId: ID!) {
+        markPullRequestReadyForReview(input: { pullRequestId: $prId }) {
+          pullRequest {
+            id
+            number
+            title
+            isDraft
+            url
+          }
+        }
+      }
+    `;
+
+    const mutationResp = await fetch('https://api.github.com/graphql', {
+      method: "POST",
+      headers: {
+        Authorization,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query: mutation,
+        variables: { prId: draftPR.id }
+      })
+    });
+
+    const mutationResponse = await mutationResp.json();
+
+    if (mutationResponse.errors) {
+      res.status(500).json({ error: '❌ Error en la mutación', details: mutationResponse.errors });
+      return;
+    }
+
+    const updatedPR = mutationResponse.data.markPullRequestReadyForReview.pullRequest;
+
+    res.status(200).json({
+      message: `✅ Pull Request #${updatedPR.number} ahora está "Ready for Review".`,
+      pr: updatedPR
+    });
+
+  } catch (error) {
+    console.error("❌ Error inesperado:", error);
+    res.status(500).json({
+      error: error instanceof Error ? error.message : "Error desconocido"
+    });
   }
 });
 
