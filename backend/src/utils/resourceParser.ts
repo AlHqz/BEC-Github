@@ -1,10 +1,10 @@
 import yaml from "yaml";
 import fs from "node:fs/promises";
-import * as dirManager from "./dirManager";
-import * as imageManager from "./imageManager";
-import * as PRManagement from '../prManagement';
-import * as resourceInterfaces from "./resourceInterfaces";
-import remotePath from "./remotePaths";
+import * as dirManager from "./dirManager.ts";
+import * as imageManager from "./imageManager.ts";
+import * as PRManagement from '../prManagement.ts';
+import * as resourceInterfaces from "./resourceInterfaces.ts";
+import remotePath from "./remotePaths.ts";
 import { format } from "date-fns";
 
 //Identifica el tipo de recurso
@@ -236,11 +236,11 @@ async function parseTutorials(data: resourceInterfaces.TutorialData, image: any,
         const remote = await remotePath(data);
         console.log("Remote Path for the processed resource category: " + remote);
 
-        const branchName = await PRManagement.branchNameCreator(data.githubUser, data.title);
-        const branchData = {OWNER: data.githubUser, TOKEN: data.githubToken, branchName: branchName};
-        const commitData = {OWNER: data.githubUser, TOKEN: data.githubToken, branchName: branchName, folderPath: parentPath, remotePath: remote, resourceName: data.title};
+       const branchName = await PRManagement.branchNameCreator(data.githubUser, data.title);
+       const branchData = {OWNER: data.githubUser, TOKEN: data.githubToken, branchName: branchName};
+       const commitData = {OWNER: data.githubUser, TOKEN: data.githubToken, branchName: branchName, folderPath: parentPath, remotePath: remote, resourceName: data.title};
 
-        await PRManagement.createPR(branchData, commitData);
+       await PRManagement.createPR(branchData, commitData);
     } catch(error) {
         console.error("Error processing data: ", error);
     }
