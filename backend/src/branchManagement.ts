@@ -80,98 +80,44 @@ router.post('/commit-folder', async (req: Request, res: Response) => {
         const baseCommitData = await baseCommitResponse.json();
         const baseTreeSha = baseCommitData.tree.sha; 
 
-                let blobs: any[] = [];
+        let blobs: any[] = [];
         const processFolder = async (folder: string)=> {
-            const files = fs.readdirSync(folder);
+        const files = fs.readdirSync(folder);
     
-            for (const fileName of files) {
-                const filePath = path.join(folderPath, fileName);
-                const stats = fs.statSync(filePath);
+        for (const fileName of files) {
+            const filePath = path.join(folder, fileName);
+            const stats = fs.statSync(filePath);
 
-                if (stats.isDirectory()) {
-                    processFolder(folderPath);
-                } else {
-                    const fileBuffer = fs.readFileSync(filePath);
-                    const encodedContent = fileBuffer.toString('base64');
+            if (stats.isDirectory()) {
+                await processFolder(filePath);
+            } else {
+                const fileBuffer = fs.readFileSync(filePath);
+                const encodedContent = fileBuffer.toString('base64');
 
-                    const blobResponse = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/blobs`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${TOKEN}`,
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({content: encodedContent, encoding: 'base64',}),
-                    });
-                    if (!blobResponse.ok) {
-                        throw new Error(`❌ Error creating blob for ${fileName}`);
-                    }
-                    const blob = await blobResponse.json();
-                    //modifies the path to add the processed files to the right folder in the repo
-                    const finalFilePath = remotePath + filePath.replace(/temp\\/, '').replace(/\\/g, '/') + '/' + fileName;
-                    blobs.push({path: finalFilePath, mode: '100644', type: 'blob', sha: blob.sha,});
+                const blobResponse = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/blobs`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${TOKEN}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({content: encodedContent, encoding: 'base64',}),
+                });
+                if (!blobResponse.ok) {
+                    throw new Error(`❌ Error creating blob for ${fileName}`);
+                }
+                const blob = await blobResponse.json();
+                //modifies the path to add the processed files to the right folder in the repo
+                const finalFilePath = remotePath + filePath.replace(/^temp[\\/]/, '').replace(/\\/g, '/');
+                blobs.push({path: finalFilePath, mode: '100644', type: 'blob', sha: blob.sha,});                
                 }
             }
         };
-        processFolder(folderPath);
 
-        // //Reads every file and/or image inside de given folder
-        // const files = fs.readdirSync(folderPath);
-        // let blobs = [];
-
-        // for (const fileName of files) {
-        //     const filePath = path.join(folderPath, fileName);
-        //     const stats = fs.statSync(filePath);
+        await processFolder(folderPath);
         
-        //     if (stats.isDirectory()) {
-        //         const subFiles = fs.readdirSync(filePath);
-                
-        //         for (const subFileName of subFiles) {
-        //             const subFilePath = path.join(filePath, subFileName);
-        //             const stats = fs.statSync(subFilePath);
-                    
-        //             if (stats.isFile()) {
-        //                 const fileBuffer = fs.readFileSync(subFilePath);
-        //                 const encodedContent = fileBuffer.toString('base64')
-        //                 //creates the blob of the processed file
-        //                 const blobResponse = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/blobs`, {
-        //                     method: 'POST',
-        //                     headers: {
-        //                         'Authorization': `Bearer ${TOKEN}`,
-        //                         'Content-Type': 'application/json',
-        //                     },
-        //                     body: JSON.stringify({content: encodedContent, encoding: 'base64',}),
-        //                 });
-        //                 if (!blobResponse.ok) {
-        //                     throw new Error(`❌ Error creating blob for ${subFileName}`);
-        //                 }
-        //                 const blob = await blobResponse.json();
-        //                 //modifies the path to add the processed files to the right folder in the repo
-        //                 const finalFilePath = remotePath + filePath.replace(/temp\\/, '').replace(/\\/g, '/') + '/' + subFileName;
-        //                 blobs.push({path: finalFilePath, mode: '100644', type: 'blob', sha: blob.sha,});
-        //             }
-        //         }        
-        //     }
-        //     //Same logic as above but for the file in the main folder
-        //     else if (stats.isFile()) {
-        //         const fileBuffer = fs.readFileSync(filePath);
-        //         const encodedContent = fileBuffer.toString('utf8');
-
-        //         const blobResponse = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/blobs`, {
-        //             method: 'POST',
-        //             headers: {
-        //                 'Authorization': `Bearer ${TOKEN}`,
-        //                 'Content-Type': 'application/json',
-        //             },
-        //             body: JSON.stringify({content: encodedContent, encoding: 'utf-8',}),
-        //         });
-        //         if (!blobResponse.ok) {
-        //         throw new Error(`❌ Error creating blob for ${fileName}`);
-        //         }
-        //         const finalFilePath = remotePath + filePath.replace(/temp\\/, '').replace(/\\/g, '/');
-        //         const blob = await blobResponse.json();
-        //         blobs.push({path: finalFilePath, mode: '100644', type: 'blob', sha: blob.sha,});
-        //     }
-        // }
+        if(blobs.length === 0) {
+            throw new Error('❌ No files found to commit.');
+        }
         //Creates a new tree with the changes
         const treeResponse = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/trees`,
             {
