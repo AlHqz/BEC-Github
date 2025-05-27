@@ -77,6 +77,7 @@ async function parseEvents(data: resourceInterfaces.EventData, image: any): Prom
     
         await PRManagement.createPR(branchData, commitData);
 
+        await dirManager.deleteFolder(parentPath);
     } catch (error) {
         console.error("Error processing data: ", error);
     }
@@ -120,6 +121,8 @@ async function parseNewsletter(data: resourceInterfaces.NewsletterData, image: a
         const commitData = {OWNER: data.githubUser, TOKEN: data.githubToken, branchName: branchName, folderPath: parentPath, remotePath: remote, resourceName: data.title};
     
         await PRManagement.createPR(branchData, commitData);
+
+        await dirManager.deleteFolder(parentPath);
     }catch(error){
         console.error("Error processing data: ", error);
     }
@@ -167,6 +170,8 @@ async function parseProfessor(data: resourceInterfaces.ProfessorData, image: any
         const commitData = {OWNER: data.githubUser, TOKEN: data.githubToken, branchName: branchName, folderPath: parentPath, remotePath: remote, resourceName: data.name};
     
         await PRManagement.createPR(branchData, commitData);
+        
+        await dirManager.deleteFolder(parentPath);
     }catch(error){
         console.error("Error processing data: ", error);
     }
@@ -208,6 +213,8 @@ async function parseProjects(data: resourceInterfaces.ProjectData, image: any): 
         const commitData = {OWNER: data.githubUser, TOKEN: data.githubToken, branchName: branchName, folderPath: parentPath, remotePath: remote, resourceName: data.name};
 
         await PRManagement.createPR(branchData, commitData);
+
+        await dirManager.deleteFolder(parentPath);
     } catch(error){
         console.error("Error processing data: ", error);
     }
@@ -236,11 +243,13 @@ async function parseTutorials(data: resourceInterfaces.TutorialData, image: any,
         const remote = await remotePath(data);
         console.log("Remote Path for the processed resource category: " + remote);
 
-       const branchName = await PRManagement.branchNameCreator(data.githubUser, data.title);
-       const branchData = {OWNER: data.githubUser, TOKEN: data.githubToken, branchName: branchName};
-       const commitData = {OWNER: data.githubUser, TOKEN: data.githubToken, branchName: branchName, folderPath: parentPath, remotePath: remote, resourceName: data.title};
+        const branchName = await PRManagement.branchNameCreator(data.githubUser, data.title);
+        const branchData = {OWNER: data.githubUser, TOKEN: data.githubToken, branchName: branchName};
+        const commitData = {OWNER: data.githubUser, TOKEN: data.githubToken, branchName: branchName, folderPath: parentPath, remotePath: remote, resourceName: data.title};
 
-       await PRManagement.createPR(branchData, commitData);
+        await PRManagement.createPR(branchData, commitData);
+
+        await dirManager.deleteFolder(parentPath);
     } catch(error) {
         console.error("Error processing data: ", error);
     }
