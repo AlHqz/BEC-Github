@@ -2,6 +2,7 @@ import axios from 'axios';
 
 //Manages branch creation, data commit and PR
 export async function createPR(branchData: any, commitData: any): Promise<any> {
+    const category = commitData.category.toUpperCase();
     const UPSTREAM_OWNER = 'jramos0';
     const UPSTREAM_REPO = 'bitcoin-educational-content';
 
@@ -40,7 +41,7 @@ export async function createPR(branchData: any, commitData: any): Promise<any> {
                 const fullHead = `${commitData.OWNER}:${commitData.branchName}`
         
                 const payload = {
-                    title: `Adding ${commitData.resourceName}`, 
+                    title: `[${category}]Adding ${commitData.resourceName}`, 
                     head: fullHead, 
                     base: 'dev', 
                     body: `This pull request adds resource ${commitData.resourceName}`,
