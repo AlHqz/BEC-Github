@@ -64,7 +64,7 @@ export async function createPR(branchData: any, commitData: any): Promise<any> {
                 console.error('❌ Error creating PR: ' + error);
             }
         }
-        else if(userPRs.length >= 3) {
+        else if(userPRs.length >= 15) {
             console.error('User has reached the limit of 3 pull requests open at a time.');
         }
     }catch(error){
