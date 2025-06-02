@@ -30,7 +30,7 @@ export interface NewsletterData {
     website: string;
     language: string;
     description: string;
-    contributor_names: string[];
+    contributor_name: string;
     tags: string[];
     thumbnail: File | null;
     githubUser: string;

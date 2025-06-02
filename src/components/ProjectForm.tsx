@@ -123,7 +123,8 @@ const ProjectForm = () => {
         onChange={handleChange}
       />
 
-      <label className="cursor-pointer bg-gray-800 hover:bg-orange-700 text-white text-sm px-5 py-3 rounded-md transition shadow-md w-full text-center">
+      <div className="flex flex-row items-center gap-4">
+        <label className="cursor-pointer bg-gray-800 hover:bg-orange-700 text-white text-sm px-5 py-3 rounded-md transition shadow-md w-full text-center">
         Upload Thumbnail
         <input
           type="file"
@@ -135,6 +136,12 @@ const ProjectForm = () => {
           }}
         />
       </label>
+      {formData.thumbnail && (
+        <div className="text-green-500 text-xs text-center">
+            Selected image: '{formData.thumbnail.name}'
+        </div>
+      )}
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {(["website", "twitter", "github", "nostr"] as const).map((field) => (

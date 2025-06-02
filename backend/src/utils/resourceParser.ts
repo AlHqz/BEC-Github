@@ -100,7 +100,7 @@ async function parseNewsletter(data: resourceInterfaces.NewsletterData, image: a
             },
             language: data.language,
             description: description,
-            contributor_names: data.contributor_names,
+            contributor_name: data.githubUser,
             tags: data.tags,
         }
 
@@ -138,7 +138,7 @@ async function parseProfessor(data: resourceInterfaces.ProfessorData, image: any
         const professorYMLData = {
             id: data.id,
             name: data.name,
-            contributor_id: data.contributor_id,
+            contributor_id: data.githubUser,
             links: links,
             ...(data.lightning_address && { tips: { lightning_address: data.lightning_address } }),
             company: data.company ? data.company : undefined ,

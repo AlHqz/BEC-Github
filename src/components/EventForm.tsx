@@ -129,6 +129,11 @@ const EventForm = () => {
           <label title="Upload only horizontal images" className="cursor-pointer bg-gray-800 hover:bg-orange-700 text-white text-sm px-5 py-3 rounded-md transition shadow-md w-full text-center">
             Upload Thumbnail
             <input type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) formData.thumbnail = file; }} />
+            {formData.thumbnail && (
+            <div className="text-green-500 text-xs text-center">
+              Selected image: '{formData.thumbnail.name}'
+            </div>
+          )}
           </label>
         </div>
       </div>
