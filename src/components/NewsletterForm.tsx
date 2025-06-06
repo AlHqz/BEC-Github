@@ -24,7 +24,7 @@ const NewsletterForm = () => {
     githubToken: "",
   });
 
-  const levels = ["beginner", "intermediate", "expert"];
+  const levels = ["beginner", "intermediate", "advanced", "expert"];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

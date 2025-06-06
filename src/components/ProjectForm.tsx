@@ -105,6 +105,33 @@ const ProjectForm = () => {
 
   return (
     <form className="w-full max-w-6xl mx-auto flex flex-col gap-4 px-4" onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <select
+          name="category"
+          className="p-3 rounded bg-gray-800 text-white"
+          value={formData.category}
+          onChange={handleChange}
+        >
+          {categories.map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+
+        <select
+          name="original_language"
+          value={formData.original_language}
+          onChange={handleChange}
+          className="p-3 rounded bg-gray-800 text-white w-full"
+        >
+          <option value="">Select Language</option>
+          {Object.entries(supportedLanguages).map(([code, name]) => (
+            <option key={code} value={code}>
+              {name}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <input
         type="text"
         name="name"
@@ -154,33 +181,6 @@ const ProjectForm = () => {
             onChange={(e) => handleLinkChange(field, e.target.value)}
           />
         ))}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <select
-          name="category"
-          className="p-3 rounded bg-gray-800 text-white"
-          value={formData.category}
-          onChange={handleChange}
-        >
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
-
-        <select
-          name="original_language"
-          value={formData.original_language}
-          onChange={handleChange}
-          className="p-3 rounded bg-gray-800 text-white w-full"
-        >
-          <option value="">Select Language</option>
-          {Object.entries(supportedLanguages).map(([code, name]) => (
-            <option key={code} value={code}>
-              {name}
-            </option>
-          ))}
-        </select>
       </div>
 
       <div className="flex flex-col gap-2">
