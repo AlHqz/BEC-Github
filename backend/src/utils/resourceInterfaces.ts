@@ -1,5 +1,6 @@
 //Template de formato yml para events
 export interface EventData {
+    resourceCategory: string;
     id: string;
     start_date: string;
     end_date: string;
@@ -19,6 +20,7 @@ export interface EventData {
 }
 
 export interface NewsletterData {
+    resourceCategory: string;
     category: string;
     id: string;
     title: string;
@@ -28,7 +30,7 @@ export interface NewsletterData {
     website: string;
     language: string;
     description: string;
-    contributor_names: string[];
+    contributor_name: string;
     tags: string[];
     thumbnail: File | null;
     githubUser: string;
@@ -36,6 +38,7 @@ export interface NewsletterData {
 }
 
 export interface ProfessorData {
+    resourceCategory: string;
     id: string;
     name: string;
     contributor_id: string;
@@ -54,6 +57,7 @@ export interface ProfessorData {
 }
 
 export interface ProjectData {
+    resourceCategory: string;
     id: string,
     name: string,
     description: string,
@@ -69,6 +73,7 @@ export interface ProjectData {
 }
 
 export interface TutorialData {
+    resourceCategory: string;
     title: string;
     language: String,
     markdown: String;
